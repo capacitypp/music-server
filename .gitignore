@@ -1,5 +1,6 @@
 MusicPlayer
 build
+data
 
 # Compiled Object files
 *.slo
