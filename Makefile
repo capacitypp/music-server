@@ -1,7 +1,7 @@
 OBJS=Main.o
 OBJPATHS=$(addprefix $(BUILDPATH)/, $(OBJS))
 CPPFLAGS=$(INCLUDE) -Wall -O2 -std=c++14 -MMD
-LDFLAGS=-lopenal -lalut -lm -lstdc++
+LDFLAGS=-lopenal -lalut -lstdc++
 BUILDPATH=./build
 CXX=ccache clang++
 TARGET=MusicPlayer
