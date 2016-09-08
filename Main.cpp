@@ -10,12 +10,51 @@
 
 using namespace std;
 
+string readLine(int sock)
+{
+	string line;
+	char buf;
+	while (1) {
+		if (!read(sock, &buf, 1))
+			continue;
+		if (buf == '\r')
+			continue;
+		if (buf == '\n')
+			break;
+		line += buf;
+	}
+	return line;
+}
+
+void play(void)
+{
+	ALuint buffer;
+	ALuint source;
+	buffer = alutCreateBufferFromFile("data/sample.wav");
+	if (buffer == AL_NONE) {
+		cerr << "alutCreateBufferFromFile() failed." << endl;
+		alutExit();
+		exit(1);
+	}
+	alGenSources(1, &source);
+	alSourcei(source, AL_BUFFER, buffer);
+	alSourcePlay(source);
+	//alutSleep(10);
+}
+
 void task(int sock)
 {
 	cout << "connected." << endl;
 	char buf[256];
 	strcpy(buf, "server.");
 	write(sock, buf, strlen(buf) + 1);
+
+	string line = readLine(sock);
+	cout << "[" << line << "]" << endl;
+	if (line == "play")
+		play();
+	else
+		cerr << "unknown command." << endl;
 
 	close(sock);
 }
@@ -37,6 +76,7 @@ void server(void)
 
 	if (bind(sock, (struct sockaddr*)&saddr, sizeof(saddr)) < 0) {
 		cerr << "bind() failed." << endl;
+		alutExit();
 		exit(1);
 	}
 
@@ -62,22 +102,9 @@ void server(void)
 int main(int argc, char** argv)
 {
 	alutInit(&argc, argv);
-/*
-	ALuint buffer;
-	ALuint source;
-	buffer = alutCreateBufferFromFile("data/sample.wav");
-	if (buffer == AL_NONE) {
-		cerr << "alutCreateBufferFromFile() failed." << endl;
-		alutExit();
-		return 1;
-	}
-	alGenSources(1, &source);
-	alSourcei(source, AL_BUFFER, buffer);
-	alSourcePlay(source);
-	alutSleep(10);
-*/
-	alutExit();
+
 	server();
+	alutExit();
 
 	return 0;
 }
