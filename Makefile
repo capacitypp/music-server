@@ -1,7 +1,7 @@
 OBJS=Main.o WavePlayer.o
 OBJPATHS=$(addprefix $(BUILDPATH)/, $(OBJS))
 CPPFLAGS=$(INCLUDE) -Wall -O2 -std=c++14 -MMD
-LDFLAGS=-lopenal -lalut -lstdc++
+LDFLAGS=-lopenal -lalut -lstdc++ -lpthread
 BUILDPATH=./build
 CXX=ccache clang++
 TARGET=MusicPlayer

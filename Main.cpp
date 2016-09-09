@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <thread>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -31,18 +32,19 @@ string readLine(int sock)
 
 void play(const string& fpath)
 {
-	ALuint buffer;
-	ALuint source;
-	buffer = alutCreateBufferFromFile(fpath.c_str());
-	if (buffer == AL_NONE) {
-		cerr << "alutCreateBufferFromFile() failed." << endl;
-		alutExit();
-		exit(1);
+	WavePlayer player;
+	ifstream ifs;
+	ifs.open(fpath.c_str(), ios::binary);
+	ifs.seekg(0, ifs.end);
+	int size = ifs.tellg();
+	ifs.seekg(0, ifs.beg);
+	unsigned char buf[256];
+	while (size) {
+		int readSize = (size > sizeof(buf)) ? sizeof(buf) : size;
+		ifs.read((char*)buf, readSize);
+		player.addData(buf, readSize);
+		size -= readSize;
 	}
-	alGenSources(1, &source);
-	alSourcei(source, AL_BUFFER, buffer);
-	alSourcePlay(source);
-	//alutSleep(10);
 }
 
 void task(int sock)
@@ -56,7 +58,8 @@ void task(int sock)
 	cout << "[" << line << "]" << endl;
 	if (line == "play") {
 		string fpath = readLine(sock);
-		play(fpath);
+		thread t(play, fpath);
+		t.detach();
 	} else
 		cerr << "unknown command." << endl;
 
@@ -106,20 +109,6 @@ void server(void)
 int main(int argc, char** argv)
 {
 	alutInit(&argc, argv);
-	WavePlayer player;
-	ifstream ifs;
-	ifs.open("data/sample.wav", ios::binary);
-	ifs.seekg(0, ifs.end);
-	int size = ifs.tellg();
-	ifs.seekg(0, ifs.beg);
-	unsigned char buf[256];
-	while (size) {
-		int readSize = (size > sizeof(buf)) ? sizeof(buf) : size;
-		ifs.read((char*)buf, readSize);
-		player.addData(buf, readSize);
-		size -= readSize;
-	}
-	return 0;
 
 	server();
 	alutExit();
