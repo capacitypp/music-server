@@ -46,8 +46,10 @@ public:
 	void addData(unsigned char* data, unsigned size);
 	bool process(void);
 	bool isProcessed(void) const;
+	bool isPrepared(void) const;
 	void pause(void);
 	void resume(void);
+	unsigned getRemainigSize(void) const;
 };
 
 #endif

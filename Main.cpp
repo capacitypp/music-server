@@ -42,11 +42,13 @@ void play(const string& fpath)
 	WavePlayer player;
 	ifstream ifs;
 	ifs.open(fpath.c_str(), ios::binary);
+	/*
 	ifs.seekg(0, ifs.end);
 	int size = ifs.tellg();
 	ifs.seekg(0, ifs.beg);
+	*/
 	unsigned char buf[256];
-	while (size) {
+	while (1) {
 		if (request == STOP && (state == PLAY || state == PAUSE))
 			break;
 		if (request == PAUSE && state == PLAY) {
@@ -57,11 +59,14 @@ void play(const string& fpath)
 			state = PLAY;
 			player.resume();
 		}
-		int readSize = (size > sizeof(buf)) ? sizeof(buf) : size;
+		int readSize = player.getRemainigSize();
+		if (!readSize)
+			break;
+		if (readSize > sizeof(buf))
+			readSize = sizeof(buf);
 		ifs.read((char*)buf, readSize);
 		player.addData(buf, readSize);
 		while (player.process());
-		size -= readSize;
 	}
 	while (!player.isProcessed()) {
 		if (request == STOP && (state == PLAY || state == PAUSE))
@@ -77,7 +82,10 @@ void play(const string& fpath)
 		player.process();
 		usleep(10 * 1000);
 	}
+	cout << "sleep" << endl;
+	usleep(10 * 1000 * 1000);
 	state = STOP;
+	cout << "isPrepared : " << player.isPrepared() << endl;
 }
 
 void task(int sock)

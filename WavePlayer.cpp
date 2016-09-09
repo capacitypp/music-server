@@ -32,6 +32,7 @@ void WavePlayer::queueBuffer(unsigned size, ALuint buffer)
 	else
 		format = (bitswidth == 8) ? AL_FORMAT_STEREO8 : AL_FORMAT_STEREO16;
 	alBufferData(buffer, format, bufferData, size, samplerate);
+	queuedSize += size;
 }
 
 bool WavePlayer::processRIFFChunk(void)
@@ -132,6 +133,7 @@ bool WavePlayer::processDATAChunk(void)
 			mode = LIST_CHUNK;
 			break;
 		}
+		cout << "head : " << toString(4) << endl;
 		dispose(4);
 		break;
 	case 4:
@@ -264,6 +266,15 @@ bool WavePlayer::isProcessed(void) const
 	return data.size() ? false : true;
 }
 
+bool WavePlayer::isPrepared(void) const
+{
+	if (mode != DATA)
+		return false;
+	if (data.size() + queuedSize != dataChunkSize)
+		return false;
+	return true;
+}
+
 void WavePlayer::pause(void)
 {
 	alSourcePause(source);
@@ -272,5 +283,12 @@ void WavePlayer::pause(void)
 void WavePlayer::resume(void)
 {
 	alSourcePlay(source);
+}
+
+unsigned WavePlayer::getRemainigSize(void) const
+{
+	if (mode != DATA)
+		return 1024;
+	return dataChunkSize - data.size() - queuedSize;
 }
 
