@@ -18,7 +18,7 @@ enum State { STOP, PLAY, PAUSE, REPEAT};
 
 thread t;
 State state = STOP;
-bool stopRequest = false;
+State request = PLAY;
 
 string readLine(int sock)
 {
@@ -38,7 +38,7 @@ string readLine(int sock)
 
 void play(const string& fpath)
 {
-	stopRequest = false;
+	request = PLAY;
 	WavePlayer player;
 	ifstream ifs;
 	ifs.open(fpath.c_str(), ios::binary);
@@ -47,8 +47,16 @@ void play(const string& fpath)
 	ifs.seekg(0, ifs.beg);
 	unsigned char buf[256];
 	while (size) {
-		if (stopRequest)
+		if (request == STOP && (state == PLAY || state == PAUSE))
 			break;
+		if (request == PAUSE && state == PLAY) {
+			state = PAUSE;
+			player.pause();
+		}
+		if (request == PLAY && state == PAUSE) {
+			state = PLAY;
+			player.resume();
+		}
 		int readSize = (size > sizeof(buf)) ? sizeof(buf) : size;
 		ifs.read((char*)buf, readSize);
 		player.addData(buf, readSize);
@@ -56,11 +64,20 @@ void play(const string& fpath)
 		size -= readSize;
 	}
 	while (!player.isProcessed()) {
-		if (stopRequest)
+		if (request == STOP && (state == PLAY || state == PAUSE))
 			break;
+		if (request == PAUSE && state == PLAY) {
+			state = PAUSE;
+			player.pause();
+		}
+		if (request == PLAY && state == PAUSE) {
+			state = PLAY;
+			player.resume();
+		}
 		player.process();
 		usleep(10 * 1000);
 	}
+	state = STOP;
 }
 
 void task(int sock)
@@ -80,8 +97,11 @@ void task(int sock)
 		t = thread(play, fpath);
 		t.detach();
 	} else if (line == "stop") {
-		stopRequest = true;
-		state = STOP;
+		request = STOP;
+	} else if (line == "pause") {
+		request = PAUSE;
+	} else if (line == "resume") {
+		request = PLAY;
 	} else
 		cerr << "unknown command." << endl;
 }

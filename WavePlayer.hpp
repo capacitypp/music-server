@@ -46,6 +46,8 @@ public:
 	void addData(unsigned char* data, unsigned size);
 	bool process(void);
 	bool isProcessed(void) const;
+	void pause(void);
+	void resume(void);
 };
 
 #endif

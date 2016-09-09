@@ -264,3 +264,13 @@ bool WavePlayer::isProcessed(void) const
 	return data.size() ? false : true;
 }
 
+void WavePlayer::pause(void)
+{
+	alSourcePause(source);
+}
+
+void WavePlayer::resume(void)
+{
+	alSourcePlay(source);
+}
+
