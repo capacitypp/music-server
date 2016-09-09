@@ -26,11 +26,11 @@ string readLine(int sock)
 	return line;
 }
 
-void play(void)
+void play(const string& fpath)
 {
 	ALuint buffer;
 	ALuint source;
-	buffer = alutCreateBufferFromFile("data/sample.wav");
+	buffer = alutCreateBufferFromFile(fpath.c_str());
 	if (buffer == AL_NONE) {
 		cerr << "alutCreateBufferFromFile() failed." << endl;
 		alutExit();
@@ -51,9 +51,10 @@ void task(int sock)
 
 	string line = readLine(sock);
 	cout << "[" << line << "]" << endl;
-	if (line == "play")
-		play();
-	else
+	if (line == "play") {
+		string fpath = readLine(sock);
+		play(fpath);
+	} else
 		cerr << "unknown command." << endl;
 
 	close(sock);
