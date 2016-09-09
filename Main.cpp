@@ -1,10 +1,13 @@
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
 #include <AL/alut.h>
+
+#include "WavePlayer.hpp"
 
 #define PORT 23456
 
@@ -103,6 +106,20 @@ void server(void)
 int main(int argc, char** argv)
 {
 	alutInit(&argc, argv);
+	WavePlayer player;
+	ifstream ifs;
+	ifs.open("data/sample.wav", ios::binary);
+	ifs.seekg(0, ifs.end);
+	int size = ifs.tellg();
+	ifs.seekg(0, ifs.beg);
+	unsigned char buf[256];
+	while (size) {
+		int readSize = (size > sizeof(buf)) ? sizeof(buf) : size;
+		ifs.read((char*)buf, readSize);
+		player.addData(buf, readSize);
+		size -= readSize;
+	}
+	return 0;
 
 	server();
 	alutExit();
