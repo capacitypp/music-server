@@ -18,6 +18,7 @@ enum State { STOP, PLAY, PAUSE, REPEAT};
 
 thread t;
 State state = STOP;
+bool stopRequest = false;
 
 string readLine(int sock)
 {
@@ -37,6 +38,7 @@ string readLine(int sock)
 
 void play(const string& fpath)
 {
+	stopRequest = false;
 	WavePlayer player;
 	ifstream ifs;
 	ifs.open(fpath.c_str(), ios::binary);
@@ -45,15 +47,20 @@ void play(const string& fpath)
 	ifs.seekg(0, ifs.beg);
 	unsigned char buf[256];
 	while (size) {
+		if (stopRequest)
+			break;
 		int readSize = (size > sizeof(buf)) ? sizeof(buf) : size;
 		ifs.read((char*)buf, readSize);
 		player.addData(buf, readSize);
 		while (player.process());
 		size -= readSize;
 	}
-	cout << "process" << endl;
-	while (!player.isProcessed())
+	while (!player.isProcessed()) {
+		if (stopRequest)
+			break;
 		player.process();
+		usleep(10 * 1000);
+	}
 }
 
 void task(int sock)
@@ -73,7 +80,8 @@ void task(int sock)
 		t = thread(play, fpath);
 		t.detach();
 	} else if (line == "stop") {
-		t = thread();
+		stopRequest = true;
+		state = STOP;
 	} else
 		cerr << "unknown command." << endl;
 }
