@@ -48,8 +48,12 @@ void play(const string& fpath)
 		int readSize = (size > sizeof(buf)) ? sizeof(buf) : size;
 		ifs.read((char*)buf, readSize);
 		player.addData(buf, readSize);
+		while (player.process());
 		size -= readSize;
 	}
+	cout << "process" << endl;
+	while (!player.isProcessed())
+		player.process();
 }
 
 void task(int sock)
@@ -68,6 +72,8 @@ void task(int sock)
 		string fpath = readLine(sock);
 		t = thread(play, fpath);
 		t.detach();
+	} else if (line == "stop") {
+		t = thread();
 	} else
 		cerr << "unknown command." << endl;
 }

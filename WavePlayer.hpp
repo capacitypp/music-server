@@ -39,12 +39,13 @@ private:
 	bool processDATAChunk(void);
 	bool processDATA(void);
 	bool processLISTChunk(void);
-	bool process(void);
 
 public:
 	WavePlayer();
 	~WavePlayer();
 	void addData(unsigned char* data, unsigned size);
+	bool process(void);
+	bool isProcessed(void) const;
 };
 
 #endif

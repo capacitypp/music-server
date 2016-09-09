@@ -1,4 +1,5 @@
 #include <iostream>
+#include <unistd.h>
 
 #include "WavePlayer.hpp"
 
@@ -151,12 +152,9 @@ bool WavePlayer::processDATA(void)
 {
 	if (data.size() < bufferSize && data.size() + queuedSize != dataChunkSize)
 		return false;
-	cout << "buffer size : " << data.size() << "[B] (" << data.size() / 1024 << "[KB])" << endl;
 	unsigned size = bufferSize;
 	if (data.size() < size)
 		size = data.size();
-	copy(data.begin(), data.begin() + size, bufferData);
-	dispose(size);
 
 	bool flag = false;
 	unsigned idx;
@@ -169,7 +167,10 @@ bool WavePlayer::processDATA(void)
 	}
 	if (flag) {
 		cout << "alGenBuffers" << endl;
+		cout << "buffer size : " << data.size() << "[B] (" << data.size() / 1024 << "[KB])" << endl;
 		alGenBuffers(1, &buffers[idx]);
+		copy(data.begin(), data.begin() + size, bufferData);
+		dispose(size);
 		queueBuffer(size, buffers[idx]);
 		alSourceQueueBuffers(source, 1, &buffers[idx]);
 		if (!idx)
@@ -177,19 +178,17 @@ bool WavePlayer::processDATA(void)
 		if (!idx)
 			cout << "alSourcePlay" << endl;
 	} else {
-		while (1) {
-			int processed;
-			alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
-			if (!processed) {
-				alutSleep(1);
-				continue;
-			}
-			ALuint buffer;
-			alSourceUnqueueBuffers(source, 1, &buffer);
-			queueBuffer(size, buffer);
-			alSourceQueueBuffers(source, 1, &buffer);
-			break;
-		}
+		int processed;
+		alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+		if (!processed)
+			return false;
+		cout << "buffer size : " << data.size() << "[B] (" << data.size() / 1024 << "[KB])" << endl;
+		copy(data.begin(), data.begin() + size, bufferData);
+		dispose(size);
+		ALuint buffer;
+		alSourceUnqueueBuffers(source, 1, &buffer);
+		queueBuffer(size, buffer);
+		alSourceQueueBuffers(source, 1, &buffer);
 	}
 
 	return true;
@@ -220,23 +219,6 @@ bool WavePlayer::processLISTChunk(void)
 	return true;
 }
 
-bool WavePlayer::process(void)
-{
-	switch (mode) {
-	case RIFF_CHUNK:
-		return processRIFFChunk();
-	case FMT_CHUNK:
-		return processFMTChunk();
-	case DATA_CHUNK:
-		return processDATAChunk();
-	case DATA:
-		return processDATA();
-	case LIST_CHUNK:
-		return processLISTChunk();
-	};
-	return true;
-}
-
 WavePlayer::WavePlayer()
 	: mode(RIFF_CHUNK), idx(0), bufferSize(1024 * 1024)
 {
@@ -259,6 +241,27 @@ void WavePlayer::addData(unsigned char* data, unsigned size)
 {
 	for (unsigned i = 0; i < size; i++)
 		this->data.push_back(data[i]);
-	while (process());
+}
+
+bool WavePlayer::process(void)
+{
+	switch (mode) {
+	case RIFF_CHUNK:
+		return processRIFFChunk();
+	case FMT_CHUNK:
+		return processFMTChunk();
+	case DATA_CHUNK:
+		return processDATAChunk();
+	case DATA:
+		return processDATA();
+	case LIST_CHUNK:
+		return processLISTChunk();
+	};
+	return true;
+}
+
+bool WavePlayer::isProcessed(void) const
+{
+	return data.size() ? false : true;
 }
 
