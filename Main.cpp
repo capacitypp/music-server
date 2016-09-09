@@ -14,6 +14,11 @@
 
 using namespace std;
 
+enum State { STOP, PLAY, PAUSE, REPEAT};
+
+thread t;
+State state = STOP;
+
 string readLine(int sock)
 {
 	string line;
@@ -57,13 +62,14 @@ void task(int sock)
 	string line = readLine(sock);
 	cout << "[" << line << "]" << endl;
 	if (line == "play") {
+		if (state != STOP)
+			return;
+		state = PLAY;
 		string fpath = readLine(sock);
-		thread t(play, fpath);
+		t = thread(play, fpath);
 		t.detach();
 	} else
 		cerr << "unknown command." << endl;
-
-	close(sock);
 }
 
 void server(void)
@@ -101,6 +107,7 @@ void server(void)
 			exit(1);
 		}
 		task(sockClient);
+		close(sockClient);
 	}
 
 	close(sock);
